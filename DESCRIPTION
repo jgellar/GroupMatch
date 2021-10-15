@@ -1,11 +1,30 @@
 Package: GroupMatch
 Type: Package
-Title: What the Package Does (Title Case)
+Title: GroupMatch: Optimal Matching under Rolling Enrollment
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: Jonathan Gellar, Ben B. Hansen, Mark Fredrickson, Amanda Glazer, Lauren Forrow, Sam Pimentel
+Maintainer: Jonathan Gellar <jgellar@mathematica-mpr.com>
+Description: This package extends optimal matching functionality to cases where enrollment in the treatment 
+             is rolling. As such, this package only slightly modifies the {optmatch} package and acknowledges
+             a heavy debt to its authors: Ben B. Hansen, Mark Fredrickson, Josh Buckner, Josh Errickson, Adam Rauh, 
+             and Peter Solenberger.  Like {optmatch}, GroupMatch uses the RELAX-IV minimum cost flow solver due 
+             to Dimitri P. Bertsekas and Paul  Tseng to solve a representation of the matching problem as a network flow.
+             It is possible to combine this representation of the matching problem with standard constraints, such
+             as calipers or exact-matching, to improve balance or create a stratified matching problem.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+Collate:
+    'Optmatch.R'
+    'feasible.R'
+    'gSubDivStrat.R'
+    'gmatch.R'
+    'groupmatch.R'
+    'mdist.R'
+    'rollingMatch.R'
+    'utilities.R'
+    'zzz.R'
+    'zzzDistanceSpecification.R'
+Depends: 
+Imports: rcbalance
+RoxygenNote: 7.1.1
