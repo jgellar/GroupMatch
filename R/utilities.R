@@ -113,3 +113,39 @@ missing_x_msg <- function(x_str, data_str, ...) {
         paste(data_str, "$", x_str, sep=""),
         msg_tail)
 }
+
+# Function to convert the matrix output to weights
+matrix_to_weights <- function(mat, dat){
+  # convert matrix to dataframe and get weights for each treated unit
+  match_df <- data.frame(mat) %>% mutate(wt = 1/rowSums(!is.na(.)))
+  options(warn = -1) # suppress warnings temporarily
+  match_df <- melt(match_df, id.vars = ncol(match_df))
+  options(warn = getOption("warn"))
+  # get total weight for each control unit
+  match_df <- match_df %>% group_by(value) %>% 
+    dplyr::summarize(match_wt = sum(wt))
+  # add ID column to dat
+  dat$uniqueID <- as.character(1:nrow(dat))
+  # join weights to the dataset
+  dat <- dat %>% left_join(match_df, by = c("uniqueID" = "value")) %>%
+    mutate(match_wt = ifelse(treat == 1, 1, match_wt),
+           match_wt = ifelse(is.na(match_wt) == T, 0, match_wt))
+  
+  return(dat)
+}
+
+# Function to convert matrix output to optmatch setID format
+matrix_to_set <- function(match){
+  if(length(unique(as.vector(match$cells))) == nrow(match$cells)*ncol(match$cells)){
+    unit_names <- names(attr(match, "group")[[1]])
+    output <- rep(0, length(unit_names))
+    names(output) <- unit_names
+    set_name <- seq(1, 2, length.out = nrow(match$cells))
+    for(i in 1:nrow(match$cells)){
+      output[which(names(output) %in% match$cells[i,] | names(output) == rownames(match$cells)[i])] <- set_name[i]
+    }
+  } else {
+    output <- "Function only works for matching without replacement!"
+  }
+  return(output)
+}
