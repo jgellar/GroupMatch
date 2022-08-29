@@ -191,7 +191,7 @@ gmatch <- function(distance, group, allow_duplicates = FALSE,
     if(replace_value == FALSE){
       ucap_value <- 1
     } else {
-      ucap_value <- 100
+      ucap_value <- sum(nodes$b[nodes$b > 0]) # if with instance replacement increase ucap
     }
     
     edges <-
@@ -215,7 +215,7 @@ gmatch <- function(distance, group, allow_duplicates = FALSE,
                    data.frame(type   = "CS",
                               startn = nodes$id[nodes$type == "C"],
                               endn   = nodes$id[nodes$type == "S"],
-                              ucap   = ucap_value, # 1 is without replacement, increase for with replacement
+                              ucap   = ucap_value, 
                               dist   = 0)))
   }
   

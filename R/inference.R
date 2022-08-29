@@ -42,7 +42,7 @@ bootstrap_ci <- function(match, dat, treat_variable = "treat",
 }
 
 # run falsification test
-control_test <- function(control_data, control_variables, outcome_model, 
+control_test <- function(control_data, control_variables, outcome_model = NA, 
                          outcome_variable, time_variable, trajectory_id,
                          time_points, rand_reps = 100,
                          caliper = 0.2, reps = 1000){
@@ -50,8 +50,12 @@ control_test <- function(control_data, control_variables, outcome_model,
   control_data <- control_data %>%
     filter(!!sym(time_variable) %in% time_points)
   
-  # apply bias correction
-  control_data$bias_correct <- predict(outcome_model, control_data)
+  # apply bias correction, if applicable
+  if(is.na(outcome_model) == F){
+    control_data$bias_correct <- predict(outcome_model, control_data)
+  } else {
+    control_data$bias_correct <- 0
+  }
   
   # create matching formula
   matching_formula <- paste("new_treat ~ ", paste(control_variables, collapse = ' + '))
