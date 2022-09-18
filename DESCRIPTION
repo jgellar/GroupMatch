@@ -24,7 +24,9 @@ Collate:
     'rollingMatch.R'
     'utilities.R'
     'zzz.R'
-    'zzzDistanceSpecification.R'
+    'zzzDistanceSpecification.R',
+    'inference.R',
+    'test.R'
 Depends: 
 Imports: rcbalance
 RoxygenNote: 7.1.1
