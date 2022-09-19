@@ -24,8 +24,8 @@ Collate:
     'rollingMatch.R'
     'utilities.R'
     'zzz.R'
-    'zzzDistanceSpecification.R',
-    'inference.R',
+    'zzzDistanceSpecification.R'
+    'inference.R'
     'test.R'
 Depends: 
 Imports: rcbalance
