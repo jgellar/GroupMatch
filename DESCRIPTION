@@ -23,7 +23,6 @@ Collate:
     'inference.R'
     'mdist.R'
     'rollingMatch.R'
-    'test.R'
     'utilities.R'
     'zzz.R'
     'zzzDistanceSpecification.R'
