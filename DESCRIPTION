@@ -27,8 +27,6 @@ Collate:
     'utilities.R'
     'zzz.R'
     'zzzDistanceSpecification.R'
-    'inference.R'
-    'test.R'
 Depends: 
 Imports: rcbalance
 RoxygenNote: 7.1.1
