@@ -6,16 +6,16 @@ library(tidyverse)
 #setwd("~/Desktop/GroupMatch/R")
 
 # source code
-source('zzzDistanceSpecification.R')
-source('zzz.R')
-source('utilities.R')
-source('rollingMatch.R')
-source('Optmatch.R')
-source('mdist.R')
-source('gSubDivStrat.R')
-source('groupmatch.R')
-source('gmatch.R')
-source('feasible.R')
+# source('zzzDistanceSpecification.R')
+# source('zzz.R')
+# source('utilities.R')
+# source('rollingMatch.R')
+# source('Optmatch.R')
+# source('mdist.R')
+# source('gSubDivStrat.R')
+# source('groupmatch.R')
+# source('gmatch.R')
+# source('feasible.R')
 
 # Units 1 & 7 and 2 & 6 should be matched, and all have wt 1
 dat <- data.frame(treat = c(1, 1, 0, 0, 0, 0, 0),

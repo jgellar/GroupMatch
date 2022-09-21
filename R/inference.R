@@ -2,7 +2,16 @@
 library(tidyverse)
 library(MatchIt)
 
-# calculate bootstrap confidence interval
+#' Calculate block bootstrap confidence interval
+#' @param match GroupMatch output
+#' @param dat Dataset GroupMatch was performed on 
+#' @param treat_variable Name of the treatment variable in the dataset
+#' @param outcome_variable Name of the outcome variable in the dataset
+#' @param trajectory_id Name of the column that identifies trajectories
+#' @param ci_level Confidence level
+#' @param reps Number of bootstrap reps
+#' @param outcome_model Outcome model, if bias correction is used
+#' @return Vector with confidence interval endpoints
 bootstrap_ci <- function(match, dat, treat_variable = "treat",
                          outcome_variable = "y_obs",
                          trajectory_id = "personID",
@@ -41,7 +50,18 @@ bootstrap_ci <- function(match, dat, treat_variable = "treat",
   return(boot_bias_correct_ci)
 }
 
-# run falsification test
+#' Run falsification test
+#' @param control_data Dataset with only control units
+#' @param control_variables Vector of variables to match on
+#' @param outcome_model Outcome model, if bias correction is used
+#' @param outcome_variable Name of the outcome variable in the dataset
+#' @param time_variable Name of the time variable in the dataset
+#' @param trajectory_id Name of the column that identifies trajectories
+#' @param time_points Vector of two time points to run falsification test on
+#' @param rand_reps Number of reps to randomly divide dataset
+#' @param caliper Matching caliper
+#' @param reps Number of permutation test reps
+#' @return List with p-value from test and mahalanobis distance of dataset for random split
 control_test <- function(control_data, control_variables, outcome_model = NA, 
                          outcome_variable, time_variable, trajectory_id,
                          time_points, rand_reps = 100,

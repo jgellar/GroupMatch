@@ -114,7 +114,10 @@ missing_x_msg <- function(x_str, data_str, ...) {
         msg_tail)
 }
 
-# Function to convert the matrix output to weights
+#' Convert GroupMatch match matrix to matching weights attached to original dataframe
+#' @param mat GroupMatch match matrix
+#' @param dat Dataset GroupMatch was performed on 
+#' @return Dataset with matching weights
 matrix_to_weights <- function(mat, dat){
   # convert matrix to dataframe and get weights for each treated unit
   match_df <- data.frame(mat) %>% mutate(wt = 1/rowSums(!is.na(.)))
@@ -134,7 +137,10 @@ matrix_to_weights <- function(mat, dat){
   return(dat)
 }
 
-# Function to convert matrix output to optmatch setID format
+
+#' Convert GroupMatch match matrix to optmatch setID format
+#' @param match GroupMatch output
+#' @return Optmatch setID vector
 matrix_to_set <- function(match){
   if(length(unique(as.vector(match$cells))) == nrow(match$cells)*ncol(match$cells)){
     unit_names <- names(attr(match, "group")[[1]])
