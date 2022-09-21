@@ -1,6 +1,7 @@
 ### Tests for the code ###
 # Load in packages
 library(tidyverse)
+library(MatchIt)
 
 # set working directory
 #setwd("~/Desktop/GroupMatch/R")
