@@ -121,7 +121,9 @@ setTryRecovery <- function() {
 #' @example inst/examples/groupmatch.R
 #' @keywords nonparametric optimize
 #' @export
-groupmatch <- function(x, group = NULL, allow_duplicates = FALSE,
+groupmatch <- function(x, group = NULL,
+                       allow_duplicates = FALSE,
+                       return_style = "vector",
                        min.controls = 0,
                        max.controls = Inf,
                        replace_value = FALSE,
@@ -130,13 +132,13 @@ groupmatch <- function(x, group = NULL, allow_duplicates = FALSE,
                        tol = .001,
                        data = NULL,
                        ...) {
-  
+
   # if x does not exist then print helpful error msg
   x_str <- deparse(substitute(x))
   data_str <- deparse(substitute(data))
   tryCatch(x, error = function(e) {
     stop(missing_x_msg(x_str, data_str, ...))})
-  
+
   cl <- match.call()
   if (is.null(data)) {
     if (is(x, "InfinitySparseMatrix") |
@@ -149,7 +151,9 @@ groupmatch <- function(x, group = NULL, allow_duplicates = FALSE,
 }
 
 #' @export
-groupmatch.default <- function(x, group = NULL, allow_duplicates = FALSE,
+groupmatch.default <- function(x, group = NULL,
+                               allow_duplicates = FALSE,
+                               return_style = "vector",
                                min.controls = 0,
                                max.controls = Inf,
                                omit.fraction = NULL,
@@ -159,11 +163,11 @@ groupmatch.default <- function(x, group = NULL, allow_duplicates = FALSE,
                                data = NULL,
                                within = NULL,
                                ...) {
-  
+
   if (!inherits(x, gsub("match_on.","",methods("match_on")))) {
     stop("Invalid input, must be a potential argument to match_on")
   }
-  
+
   mfd <- if (!is.null(data)) {
     model.frame(data, na.action=na.pass)
   } else {
@@ -177,6 +181,7 @@ groupmatch.default <- function(x, group = NULL, allow_duplicates = FALSE,
   }
   m <- match_on(x, within=within, data=mfd, ...)
   out <- groupmatch(m, group, allow_duplicates,
+                    return_style = return_style,
                     min.controls=min.controls,
                     max.controls=max.controls,
                     omit.fraction=omit.fraction,
@@ -192,6 +197,7 @@ groupmatch.default <- function(x, group = NULL, allow_duplicates = FALSE,
 
 #' @export
 groupmatch.numeric <- function(x, group = NULL, allow_duplicates = FALSE,
+                               return_style = "vector",
                                min.controls = 0,
                                max.controls = Inf,
                                omit.fraction = NULL,
@@ -202,9 +208,10 @@ groupmatch.numeric <- function(x, group = NULL, allow_duplicates = FALSE,
                                z,
                                within = NULL,
                                ...) {
-  
+
   m <- match_on(x, within=within, z=z, ...)
   out <- groupmatch(m, group, allow_duplicates,
+                    return_style=return_style,
                     min.controls=min.controls,
                     max.controls=max.controls,
                     omit.fraction=omit.fraction,
@@ -220,6 +227,7 @@ groupmatch.numeric <- function(x, group = NULL, allow_duplicates = FALSE,
 
 #' @export
 groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
+                              return_style = "vector",
                               min.controls = 0,
                               max.controls = Inf,
                               omit.fraction = NULL,
@@ -231,11 +239,25 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
                               ...) {
   ###LNV: add a check here that max.controls is not greater than the number of groups divided by number of Ts?
   ###      Also possibly a check that min.controls >=1 (i.e. no replacement)?
-  
+
   ### check of the class of group argument -- vector of group IDs (current set-up); quoted variable name, tilde variable name
-  
+
+  # Check return_style
+  if (!return_style %in% c("vector", "matrix")) {
+    stop("return style must be 'vector' or 'matrix'")
+  }
+
+  if (allow_duplicates & return_style == "vector") {
+    warning("Matching with replacement requires matrix-style return object; setting return_style to 'matrix'")
+    return_style <- "matrix"
+  }
+
+
+
+
+
   ### Checking Input ###
-  
+
   # Convert group to a vector of group IDs
   group <- if (is.character(group) & length(group)==1) {
     if (is.null(data)) stop("data required when group is a character")
@@ -248,10 +270,10 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
   } else {
     stop("Unrecognized type for group")
   }
-  
+
   # Convert to a factor
   group <- as.factor(group)
-  
+
   # Check/assign group names
   if (!is.null(data)) {
     # Name the groups with the T/C name (rowname of data)
@@ -261,37 +283,37 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
   } else if (!(names(group) %in% c(rownames(x), colnames(x)))) {
     stop("group names do not match dimnames of distance matrix")
   }
-  
+
   # Checks for group argument
   if (length(group) != sum(dim(x))) {
     stop("length of group does not match dimensions of difference matrix")
   }
-  
-  
+
+
   # this will throw an error if not valid
   validDistanceSpecification(x)
-  
+
   # note: we might want to move these checks to validDistSpec
   dnms <- dimnames(x)
   if (is.null(dnms) | is.null(dnms[[1]]) | is.null(dnms[[2]])) {
     stop("argument \'x\' must have dimnames")
   }
-  
+
   if (any(duplicated(unlist(dnms)))){
     stop("dimnames of argument \'x\' contain duplicates")
   }
-  
+
   if (!is.null(within)) warning("Ignoring non-null 'within' argument.  When using 'groupmatch' with\n pre-formed distances, please combine them using '+'.")
-  
+
   nmtrt <- dnms[[1]]
   nmctl <- dnms[[2]]
-  
+
   # note: this next _should_ be unnecessary, the objects should do this
   # but better safe than sorry
   if (!isTRUE(all.equal(dim(x), c(length(nmtrt), length(nmctl))))) {
     stop("argument \'x\' dimensions do not match row and column names")
   }
-  
+
   if (!is.numeric(min.controls)) {
     stop("argument \'min.controls\' must be numeric")
   }
@@ -313,12 +335,12 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
       stop("mean.controls must be NULL or numeric greater than 0")
     }
   }
-  
+
   if (!is.null(omit.fraction) & !is.null(mean.controls)) {
     stop("omit.fraction and mean.controls cannot both be specified")
   }
-  
-  
+
+
   # Issue #56: Checking for sane input in data
   if (!is.null(data)) {
     if (!is.vector(data)) {
@@ -330,14 +352,14 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
       stop("Some elements of the distance matrix are not found in the data argument.")
     }
   }
-  
+
   # problems is guaranteed to be a list of DistanceSpecifictions
   # it may only have 1 entry
   problems <- findSubproblems(x)
-  
+
   # the number of problems should match the argument lengths for
   # min, max, and omit
-  
+
   np <- length(problems)
   if (length(min.controls) > 1 & np != length(min.controls)) {
     stop(paste("Length of \'min.controls\' arg must be same ",
@@ -357,7 +379,7 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
     stop(paste("Length of \'mean.controls\' arg must be same ",
                "as number of subproblems [", np, "]", sep = ""))
   }
-  
+
   # reset the arguments to be the right length if they are not
   if (length(min.controls) == 1) {
     min.controls <- rep(min.controls, np)
@@ -365,7 +387,7 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
   if (length(max.controls) == 1) {
     max.controls <- rep(max.controls, np)
   }
-  
+
   if (is.null(omit.fraction)) {
     omit.fraction <- NA
   }
@@ -377,60 +399,60 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
     #  Feasible, fixed-ratio matching. Take a shortcut by setting the omf.
     omit.fraction <- 1 - min.controls * nrow(x)/denom
   }
-  
+
   if (is.null(mean.controls)) {
     mean.controls <- NA
   }
   if (length(mean.controls) == 1) {
     mean.controls <- rep(mean.controls, np)
   }
-  
+
   if (!is.list(group)) {
     group <- list(group)
   }
   if (length(group) == 1) {
     group <- rep(group, np)
   }
-  
+
   if (any(mean.controls < min.controls, na.rm=TRUE)) {
     stop("mean.controls cannot be smaller than min.controls")
   }
-  
+
   if (any(mean.controls > max.controls, na.rm=TRUE)) {
     stop("mean.controls cannot be larger than max.controls")
   }
-  
+
   if (any(!is.na(mean.controls))) {
     if (any(mean.controls > lapply(problems, function(p) {x <- subdim(p)[[1]] ;  x[2]/x[1]}), na.rm=TRUE)) {
       stop("mean.controls cannot be larger than the ratio of number of controls to treatments")
     }
   }
-  
+
   if (any(omit.fraction > 0 & max.controls <= .5, na.rm=TRUE)) {
     stop("positive \'omit.fraction\' with \'max.controls\' <= 1/2 not permitted")
   }
-  
+
   if (any(omit.fraction < 0 & min.controls >= 2, na.rm=TRUE)) {
     stop("negative \'omit.fraction\' with \'min.controls\' >= 2 not permitted")
   }
-  
-  
+
+
   user.input.mean.controls <- FALSE
-  
+
   # ?????Do we need to fix this check?????
   if (any(!is.na(mean.controls) & is.na(omit.fraction))) {
     user.input.mean.controls <- TRUE
     omit.fraction <- 1 - mapply(function(x,y) {z <- subdim(y)[[1]] ; x*z[1]/z[2]}, mean.controls, problems)
   }
-  
+
   total.n <- sum(dim(x))
-  
+
   TOL <- tol * total.n
-  
+
   # a helper to handle a single matching problem. all args required.
   # input error checking happens in the public groupmatch function.
   .groupmatch <- function(d, mnctl, mxctl, omf, g, ad, r) {
-    
+
     # if the subproblem is completely empty, short circuit
     if (length(d) == 0 || all(is.infinite(d))) {
       x <- dim(d)
@@ -441,52 +463,53 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
       tmp <- list(cells = c(cells.a, cells.b), maxerr = -1)
       return(tmp)
     }
-    
+
     ncol <- dim(d)[2]
     nrow <- dim(d)[1]
     ncg  <- length(unique(g[colnames(d)]))
-    
+
     tol.frac <- (nrow + ncol - 2)/(total.n - 2 * np)
-    
+
     # if omf is specified (i.e. not NA), see if is non-negative
     # if omf is not specified, check to see if mxctl is > .5
     if (switch(1 + is.na(omf), omf >= 0,  mxctl > .5)) {
       maxc <- min(mxctl, ncg)
       minc <- max(mnctl, 1/nrow)
       omf.calc <- omf
-      
+
     } else {
       maxc <- min(1/mnctl, ncol)
       minc <- max(1/mxctl, 1/nrow)
       omf.calc <- -1 * omf
       d <- t(d)
     }
-    
+
     temp <- gSubDivStrat(rownames = rownames(d),
                          colnames = colnames(d),
                          distspec = d,
                          group = g,
                          allow_duplicates = ad,
+                         return_style = return_style,
                          max.cpt = maxc,
                          min.cpt = minc,
                          replace_value = r,
                          tolerance = TOL * tol.frac,
                          omit.fraction = if(!is.na(omf)) { omf.calc }) # passes NULL for NA
-    
+
     return(temp)
   }
-  
+
   # a second helper function, that will attempt graceful recovery in situations where the match
   # is infeasible with the given max.controls
   .groupmatch.with.recovery <- function(d.r, mnctl.r, mxctl.r, omf.r,
                                         g.r, ad.r, r.r) {
     denom <- if (ad.r) ncol(d.r) else length(unique(g.r[colnames(d.r)]))
-    
+
     # if (mnctl.r == mxctl.r & is.na(omf.r) & (mnctl.r*nrow(d.r) < denom)) {
     #   #  Feasible, fixed-ratio matching. Take a shortcut by setting the omf.
     #   omf.r <- 1 - mnctl.r * nrow(d.r)/denom
     # }
-    
+
     # if the subproblem isn't clearly infeasible, try to get a match
     if (mxctl.r * dim(d.r)[1] >= prod(denom, 1-omf.r, na.rm=TRUE)) {
       tmp <- .groupmatch(d.r, mnctl.r, mxctl.r, omf.r, g.r, ad.r, r.r)
@@ -519,11 +542,11 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
       # trial.ss <- stratumStructure(tmp2.optmatch)
       #treats <- as.numeric(unlist(lapply(strsplit(names(trial.ss), ":"),"[",1)))
       #ctrls <- as.numeric(unlist(lapply(strsplit(names(trial.ss), ":"),"[",2)))
-      ctrls <- apply(tmp2[[1]]$cells, 1, function(x) length(na.omit(x)))      
+      ctrls <- apply(tmp2[[1]]$cells, 1, function(x) length(na.omit(x)))
       #num.controls <- sum((pmin(ctrls, mxctl.r)*trial.ss)[treats > 0])
       num.controls <- sum(pmin(ctrls, mxctl.r))
       #if(num.controls == 0) {
-      if (all(is.na(tmp2[[1]]$cells)) || all(tmp2[[1]]$cells == 'NA') || 
+      if (all(is.na(tmp2[[1]]$cells)) || all(tmp2[[1]]$cells == 'NA') ||
           length(tmp2[[1]]$cells) == 0){
         # infeasible anyways
         if (!exists("tmp")) {
@@ -533,7 +556,7 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
         return(tmp)
       }
       new.omf.r <- 1 - num.controls/denom
-      
+
       # feasible with the new omit fraction
       new.omit.fraction <<- c(new.omit.fraction, new.omf.r)
       return(.groupmatch(d.r, mnctl.r, mxctl.r, new.omf.r, g.r, ad.r, r.r))
@@ -542,20 +565,20 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
       if (!exists("tmp")) {
         tmp <- .groupmatch(d.r, mnctl.r, mxctl.r, omf.r, g.r, ad.r, r.r)
       }
-      
+
       new.omit.fraction <<- c(new.omit.fraction, omf.r)
       return(tmp)
     }
   }
-  
+
   # In case we need to try and recover from infeasible, save the new.omit.fraction's used for output to user
   new.omit.fraction <- numeric(0)
-  
+
   if (is.null(options()$groupmatch_try_recovery)) {
     warning("The flag groupmatch_try_recovery is unset, setting to TRUE")
     setTryRecovery()
   }
-  
+
   if (options()$groupmatch_try_recovery) {
     solutions <- mapply(.groupmatch.with.recovery, problems,
                         min.controls, max.controls, omit.fraction,
@@ -567,18 +590,18 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
                         group, allow_duplicates, replace_value,
                         SIMPLIFY = FALSE)
   }
-  
+
   # g for matrix output
   #mout <- makeOptmatch(x, solutions, match.call(), data)
   mout <- solutions[[1]]
-  
+
   names(min.controls) <- names(problems)
   names(max.controls) <- names(problems)
   attr(mout, "min.controls") <- min.controls
   attr(mout, "max.controls") <- max.controls
   attr(mout, "group") <- group
   attr(mout, "allow_duplicates") <- allow_duplicates
-  
+
   # length(new.omit.fraction) will be strictly positive if we ever entered .groupmatch.with.recovery
   if(length(new.omit.fraction) > 0) {
     out.omit.fraction <- new.omit.fraction
@@ -586,16 +609,16 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
     out.omit.fraction <- omit.fraction
   }
   out.mean.controls <- mapply(function(x,y) (1 - x)*y[2]/y[1], out.omit.fraction, subdim(x))
-  
+
   names(out.mean.controls) <- names(problems)
   names(out.omit.fraction) <- names(problems)
-  
+
   if(user.input.mean.controls) {
     attr(mout, "mean.controls") <- out.mean.controls
   } else {
     attr(mout, "omit.fraction") <- out.omit.fraction
   }
-  
+
   if(length(new.omit.fraction) > 0 & !identical(new.omit.fraction, omit.fraction) & !all(is.na(new.omit.fraction))) {
     if(!any(is.na(new.omit.fraction)) & all(new.omit.fraction == 1)) {
       # If we never got a feasible subproblem
@@ -604,10 +627,10 @@ groupmatch.matrix <- function(x, group = NULL, allow_duplicates = FALSE,
       warning("The problem is infeasible with the given constraints; some units were omitted to allow a match.")
     }
   }
-  
+
   # save hash of distance
   attr(mout, "hashed.distance") <- dist_digest(x)
-  
+
   if (!exists("cl")) cl <- match.call()
   attr(mout, "call") <- cl
   return(mout)
